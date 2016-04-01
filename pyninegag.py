@@ -59,7 +59,7 @@ def get_sections():
     global _sections
     if _sections is None:
         bs = _bs_from_url(BASE_URL)
-        l = bs.find(attrs='nav-menu').find(attrs='primary').find_all('li')[1:]
+        l = bs.find(attrs='nav-menu').find(attrs='primary').find_all('li')[1:-1]
         l.extend(bs.find_all(attrs="badge-section-menu-items"))
         _sections = dict((i.a.text.strip(), i.a['href']) for i in l)
     return _sections
