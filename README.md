@@ -27,6 +27,8 @@ Example output:
  'Hot': 'http://9gag.com/hot'
 }
 ```
+NOTE: NSFW section will return zero articles (empty iterable) since watching this section requires user login, which is not supported by this library.
+
 These values are not hardcoded and will be generated on first request. Values are cached.
  
 ```pyninegag.get_articles(url)``` Return iterable with all articles found on given url.
@@ -60,3 +62,5 @@ Example output:
  
  ```pyninegag.get_by_section(section_name)``` Return iterable with all articles found in given section.
  Section name must be one of the keys of ```pyninegag.get_sections()```. If not found, ```ValueError``` will be raised.
+
+There is also a logger enabled that logs exceptions and warnings of parsing errors. All errors contain article id and url in message for easier debugging of problems.
