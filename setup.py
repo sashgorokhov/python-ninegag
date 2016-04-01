@@ -10,6 +10,8 @@ setup(
     py_modules=['pyninegag'],
     url='https://github.com/sashgorokhov/python-ninegag',
     download_url='https://github.com/sashgorokhov/python-ninegag/archive/master.zip',
+    keywords=['ninegag', '9gag'],
+    classifiers=[],
     long_description=long_description,
     license='MIT License',
     author='sashgorokhov',
