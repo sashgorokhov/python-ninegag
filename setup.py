@@ -5,7 +5,7 @@ setup(
     name='python-ninegag',
     version='0.1',
     py_modules=['pyninegag'],
-    url='',
+    url='https://github.com/sashgorokhov/python-ninegag',
     license='MIT',
     author='sashgorokhov',
     author_email='sashgorokhov@gmail.com',
