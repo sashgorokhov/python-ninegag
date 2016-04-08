@@ -1,6 +1,12 @@
 python-ninegag
 **************
 
+.. image:: https://travis-ci.org/sashgorokhov/python-ninegag.svg?branch=master
+    :target: https://travis-ci.org/sashgorokhov/python-ninegag
+    
+.. image:: https://badge.fury.io/py/python-ninegag.svg
+    :target: https://badge.fury.io/py/python-ninegag
+
 Python library to get stuff from 9gag.com
 
 Installation
