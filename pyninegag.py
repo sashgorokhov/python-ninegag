@@ -138,8 +138,8 @@ def _parse_article(article):
     data['title'] = article.find(attrs='badge-item-title').a.text.strip()
     try:
         data['data'] = _get_data(article)
-    except Exception as e:
-        logger.exception('Error while parsing data of {}: {}'.format(data['id'], data['url']))
+    except NotSafeForWork:
+        logger.debug('NSFW Post: {} {}'.format(data['id'], data['url']))
         return
     if not data['data']:
         logger.warning('Unknown article type of {}: {}'.format(data['id'], data['url']))
@@ -150,7 +150,7 @@ def _parse_article(article):
 def _paginated_url(url, max_pages=1):
     """
     :param int|None max_pages: how many pages of results to parse. If None - all available. Default 1 - only first page.
-    :rtype: collections.Iterable[str]
+    :rtype: collections.Iterable[tuple[str, dict]]
     """
     parsed_pages = 0
     while max_pages is None or (max_pages and parsed_pages < max_pages):
@@ -164,10 +164,10 @@ def _paginated_url(url, max_pages=1):
         url = urlparse.urljoin(BASE_URL, json['loadMoreUrl'])
 
         for article_id in json['ids']:
-            yield json['items'][article_id]
+            yield article_id, json['items'][article_id]
 
 
-def get_articles(url, max_pages=1):
+def get_articles(url, max_pages=1, raise_on_error=False):
     """
     Return iterable with all articles found on given url.
 
@@ -175,15 +175,17 @@ def get_articles(url, max_pages=1):
     :param int|None max_pages: how many pages of results to parse. If None - all available. Default 1 - only first page.
     :rtype: collections.Iterable[dict]
     """
-    for article in _paginated_url(url, max_pages=max_pages):
+    for article_id, article in _paginated_url(url, max_pages=max_pages):
         try:
             data = _parse_article(_bs_from_response(article).article)
             if not data:
+                logger.debug('Empty data for {}'.format(article_id))
                 continue
-            else:
-                yield data
+            yield data
         except Exception as e:
-            logger.exception('Error while parsing article')
+            logger.exception('Error while parsing article {}'.format(article_id))
+            if raise_on_error:
+                raise
 
 
 def get_by_section(section_name, max_pages=1):
@@ -195,7 +197,6 @@ def get_by_section(section_name, max_pages=1):
     :rtype: collections.Iterable[dict]
     """
     sections = get_sections()
-    section_name = section_name.strip().lower().capitalize()
     if section_name not in sections:
-        raise ValueError('Invalid section name. Should be one of: {}'.format(list(sections.keys())))
+        raise ValueError('Invalid section name {}. Should be one of: {}'.format(section_name, list(sections.keys())))
     return get_articles(sections[section_name], max_pages=max_pages)
