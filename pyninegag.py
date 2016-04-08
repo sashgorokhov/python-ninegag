@@ -1,13 +1,17 @@
 import logging
 import re
-import requests
-import time
 from bs4 import BeautifulSoup
 
 try:
     import urlparse
 except ImportError:
     from urllib import parse as urlparse
+
+try:
+    from urllib2 import urlopen
+except ImportError:
+    from urllib.request import urlopen
+
 
 LONGPOST_HEIGHT_MIN = 1000
 BASE_URL = 'http://9gag.com/'
@@ -26,15 +30,17 @@ class UnknownArticleType(NineGagError): pass
 class NotSafeForWork(NineGagError): pass
 
 
+def _get_url(url):
+    return urlopen(url).read()
+
+
 def _bs_from_response(response):
     """
-    Returns BeautifulSoup from given requests response object.
+    Returns BeautifulSoup from given str with html inside.
 
-    :param str|requests.Response response:
+    :param str:
     :rtype: bs4.BeautifulSoup
     """
-    if isinstance(response, requests.Response):
-        response = response.text
     return BeautifulSoup(response, "html.parser")
 
 
@@ -46,7 +52,7 @@ def _bs_from_url(url):
     :param str url:
     :rtype: bs4.BeautifulSoup
     """
-    return _bs_from_response(requests.get(url))
+    return _bs_from_response(_get_url(url))
 
 
 def get_sections():
