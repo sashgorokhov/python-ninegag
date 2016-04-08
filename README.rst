@@ -49,9 +49,10 @@ These values are not hardcoded and will be generated on first request. Values ar
 
 .. code-block:: python
 
-    pyninegag.get_articles(url)
+    pyninegag.get_articles(url, max_pages=1)
 
 Return iterable with all articles found on given url.
+``max_pages`` - how many pages of results to parse. If None - all available. Default 1 - only first page.
 
 .. code-block:: python
 
@@ -92,7 +93,7 @@ Article type can be one of gif, image or longpost. Longpost is just a very tall 
 
 .. code-block:: python
 
-    pyninegag.get_by_section(section_name)
+    pyninegag.get_by_section(section_name, max_pages=1)
 
 Return iterable with all articles found in given section. Section name must be one of the keys of ``pyninegag.get_sections()``. If not found, ``ValueError`` will be raised.
 

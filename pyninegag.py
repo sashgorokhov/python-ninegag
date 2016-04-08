@@ -1,16 +1,12 @@
 import logging
 import re
+import requests
 from bs4 import BeautifulSoup
 
 try:
     import urlparse
 except ImportError:
     from urllib import parse as urlparse
-
-try:
-    from urllib2 import urlopen
-except ImportError:
-    from urllib.request import urlopen
 
 
 LONGPOST_HEIGHT_MIN = 1000
@@ -20,6 +16,10 @@ _sections = None
 
 logger = logging.getLogger('pyninegag')
 
+# logger.setLevel(logging.DEBUG)
+# ch = logging.StreamHandler()
+# ch.setLevel(logging.DEBUG)
+# logger.addHandler(ch)
 
 class NineGagError(Exception): pass
 
@@ -30,18 +30,14 @@ class UnknownArticleType(NineGagError): pass
 class NotSafeForWork(NineGagError): pass
 
 
-def _get_url(url):
-    return urlopen(url).read()
-
-
-def _bs_from_response(response):
+def _bs_from_response(html):
     """
     Returns BeautifulSoup from given str with html inside.
 
-    :param str:
+    :param str html:
     :rtype: bs4.BeautifulSoup
     """
-    return BeautifulSoup(response, "html.parser")
+    return BeautifulSoup(html, "html.parser")
 
 
 def _bs_from_url(url):
@@ -52,7 +48,7 @@ def _bs_from_url(url):
     :param str url:
     :rtype: bs4.BeautifulSoup
     """
-    return _bs_from_response(_get_url(url))
+    return _bs_from_response(requests.get(url).text)
 
 
 def get_sections():
@@ -69,11 +65,6 @@ def get_sections():
         l.extend(bs.find_all(attrs="badge-section-menu-items"))
         _sections = dict((i.a.text.strip(), i.a['href']) for i in l)
     return _sections
-
-
-def _get_articles(url):
-    bs = _bs_from_url(url)
-    return bs.find_all('article')
 
 
 def _get_gif(container):
@@ -156,16 +147,37 @@ def _parse_article(article):
     return data
 
 
-def get_articles(url):
+def _paginated_url(url, max_pages=1):
+    """
+    :param int|None max_pages: how many pages of results to parse. If None - all available. Default 1 - only first page.
+    :rtype: collections.Iterable[str]
+    """
+    parsed_pages = 0
+    while max_pages is None or (max_pages and parsed_pages < max_pages):
+        parsed_pages += 1
+
+        response = requests.get(url, headers={'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest'})
+        json = response.json()
+
+        if not len(json['ids']): break
+
+        url = urlparse.urljoin(BASE_URL, json['loadMoreUrl'])
+
+        for article_id in json['ids']:
+            yield json['items'][article_id]
+
+
+def get_articles(url, max_pages=1):
     """
     Return iterable with all articles found on given url.
 
     :param str url:
+    :param int|None max_pages: how many pages of results to parse. If None - all available. Default 1 - only first page.
     :rtype: collections.Iterable[dict]
     """
-    for article in _get_articles(url):
+    for article in _paginated_url(url, max_pages=max_pages):
         try:
-            data = _parse_article(article)
+            data = _parse_article(_bs_from_response(article).article)
             if not data:
                 continue
             else:
@@ -174,15 +186,16 @@ def get_articles(url):
             logger.exception('Error while parsing article')
 
 
-def get_by_section(section_name):
+def get_by_section(section_name, max_pages=1):
     """
     Return iterable with all articles found in given section.
 
     :param str section_name:
+    :param int|None max_pages: how many pages of results to parse. If None - all available. Default 1 - only first page.
     :rtype: collections.Iterable[dict]
     """
     sections = get_sections()
     section_name = section_name.strip().lower().capitalize()
     if section_name not in sections:
         raise ValueError('Invalid section name. Should be one of: {}'.format(list(sections.keys())))
-    return get_articles(sections[section_name])
+    return get_articles(sections[section_name], max_pages=max_pages)
