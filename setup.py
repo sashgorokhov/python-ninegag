@@ -6,7 +6,7 @@ with open('README.rst') as file:
 setup(
     requires=['beautifulsoup4', 'requests'],
     name='python-ninegag',
-    version='0.4',
+    version='0.4.2',
     py_modules=['pyninegag'],
     url='https://github.com/sashgorokhov/python-ninegag',
     download_url='https://github.com/sashgorokhov/python-ninegag/archive/master.zip',
