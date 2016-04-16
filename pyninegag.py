@@ -1,6 +1,7 @@
 import logging
 import re
 import requests
+import time
 from bs4 import BeautifulSoup
 
 try:
@@ -13,6 +14,7 @@ LONGPOST_HEIGHT_MIN = 1000
 BASE_URL = 'http://9gag.com/'
 
 _sections = None
+_cache = dict() # type: dict[str, tuple[int, dict]]
 
 logger = logging.getLogger('pyninegag')
 
@@ -110,6 +112,28 @@ def _get_image(container):
     return {'url': tag['src'], 'type': type}
 
 
+def _cache_article(func):
+    """
+    I wanted to use functools.lru_cache here, but it is not compatible with python 2.7 :(
+
+    :param dict article:
+    :rtype: dict
+    """
+    def wrapper(article):
+        if article['id'] in _cache:
+            return _cache[article['id']][1]
+        else:
+            data = func(article=article)
+            _cache[article['id']] = (time.time(), data)
+            if len(_cache) > 100:
+                ordered_keys = sorted(_cache.keys(), key=lambda key: _cache[key][0])
+                list(map(_cache.pop, ordered_keys[:20]))
+            return data
+
+    return wrapper
+
+
+@_cache_article
 def _get_data(article):
     """
     Return article data. Returns dict with keys url and type.
